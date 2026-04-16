@@ -16,10 +16,14 @@
 
   function headerToggle() {
     document.querySelector('#header').classList.toggle('header-show');
-    headerToggleBtn.classList.toggle('bi-list');
-    headerToggleBtn.classList.toggle('bi-x');
+    if (headerToggleBtn) {
+      headerToggleBtn.classList.toggle('bi-list');
+      headerToggleBtn.classList.toggle('bi-x');
+    }
   }
-  headerToggleBtn.addEventListener('click', headerToggle);
+  if (headerToggleBtn) {
+    headerToggleBtn.addEventListener('click', headerToggle);
+  }
 
   /**
    * Hide mobile nav on same-page/hash links
@@ -65,13 +69,15 @@
       window.scrollY > 100 ? scrollTop.classList.add('active') : scrollTop.classList.remove('active');
     }
   }
-  scrollTop.addEventListener('click', (e) => {
-    e.preventDefault();
-    window.scrollTo({
-      top: 0,
-      behavior: 'smooth'
+  if (scrollTop) {
+    scrollTop.addEventListener('click', (e) => {
+      e.preventDefault();
+      window.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+      });
     });
-  });
+  }
 
   window.addEventListener('load', toggleScrollTop);
   document.addEventListener('scroll', toggleScrollTop);
@@ -80,11 +86,13 @@
    * Animation on scroll function and init
    */
   function aosInit() {
+    if (typeof AOS === 'undefined') return;
     AOS.init({
-      duration: 600,
-      easing: 'ease-in-out',
+      duration: 450,
+      easing: 'ease-out',
       once: true,
-      mirror: false
+      mirror: false,
+      disable: window.matchMedia('(prefers-reduced-motion: reduce)').matches
     });
   }
   window.addEventListener('load', aosInit);
@@ -93,7 +101,7 @@
    * Init typed.js
    */
   const selectTyped = document.querySelector('.typed');
-  if (selectTyped) {
+  if (selectTyped && typeof Typed !== 'undefined') {
     let typed_strings = selectTyped.getAttribute('data-typed-items');
     typed_strings = typed_strings.split(',');
     new Typed('.typed', {
@@ -108,12 +116,17 @@
   /**
    * Initiate Pure Counter
    */
-  new PureCounter();
+  if (typeof PureCounter !== 'undefined') {
+    new PureCounter();
+  }
 
   /**
    * Animate the skills items on reveal
    */
   let skillsAnimation = document.querySelectorAll('.skills-animation');
+  if (typeof Waypoint === 'undefined') {
+    skillsAnimation = [];
+  }
   skillsAnimation.forEach((item) => {
     new Waypoint({
       element: item,
@@ -130,14 +143,19 @@
   /**
    * Initiate glightbox
    */
-  const glightbox = GLightbox({
-    selector: '.glightbox'
-  });
+  if (typeof GLightbox !== 'undefined') {
+    GLightbox({
+      selector: '.glightbox'
+    });
+  }
 
   /**
    * Init isotope layout and filters
    */
   document.querySelectorAll('.isotope-layout').forEach(function(isotopeItem) {
+    if (typeof Isotope === 'undefined' || typeof imagesLoaded === 'undefined') {
+      return;
+    }
     let layout = isotopeItem.getAttribute('data-layout') ?? 'masonry';
     let filter = isotopeItem.getAttribute('data-default-filter') ?? '*';
     let sort = isotopeItem.getAttribute('data-sort') ?? 'original-order';
@@ -184,7 +202,11 @@
     });
   }
 
-  window.addEventListener("load", initSwiper);
+  window.addEventListener("load", function() {
+    if (typeof Swiper !== 'undefined') {
+      initSwiper();
+    }
+  });
 
   /**
    * Correct scrolling position upon page load for URLs containing hash links.
@@ -225,5 +247,54 @@
   }
   window.addEventListener('load', navmenuScrollspy);
   document.addEventListener('scroll', navmenuScrollspy);
+
+  /**
+   * Simple project filter (portfolio 2026)
+   */
+  function initProjectTypeFilters() {
+    const filterBar = document.querySelector('.project-filter-bar');
+    if (!filterBar) return;
+
+    const buttons = Array.from(filterBar.querySelectorAll('[data-project-filter]'));
+    const cards = Array.from(document.querySelectorAll('[data-project-type]'));
+    if (!buttons.length || !cards.length) return;
+
+    const applyFilter = (filterKey) => {
+      const normalized = (filterKey || 'all').toLowerCase();
+
+      cards.forEach((card) => {
+        const type = (card.getAttribute('data-project-type') || '').toLowerCase();
+        const shouldShow = normalized === 'all' ? true : type === normalized;
+        card.classList.toggle('project-hidden', !shouldShow);
+      });
+    };
+
+    const setActiveButton = (activeBtn) => {
+      buttons.forEach((btn) => {
+        const isActive = btn === activeBtn;
+        btn.classList.toggle('is-active', isActive);
+        btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+      });
+    };
+
+    buttons.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        setActiveButton(btn);
+        applyFilter(btn.getAttribute('data-project-filter'));
+        if (typeof aosInit === 'function') {
+          aosInit();
+        }
+      });
+    });
+
+    // Initial state
+    const initial = buttons.find((b) => b.classList.contains('is-active')) || buttons[0];
+    if (initial) {
+      setActiveButton(initial);
+      applyFilter(initial.getAttribute('data-project-filter'));
+    }
+  }
+
+  window.addEventListener('load', initProjectTypeFilters);
 
 })();

@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+
+# GitHub Pages — Jessica Barrios
+# Sitemap opcional: añade sitemap.xml si más adelante lo generas
